@@ -1,0 +1,5 @@
+{
+  "name": "Punch The Monkey",
+  "description": "Daily updates and comprehensive information about Punch, the famous Japanese macaque from Ichikawa City Zoo.",
+  "requestFramePermissions": ["geolocation"]
+}
