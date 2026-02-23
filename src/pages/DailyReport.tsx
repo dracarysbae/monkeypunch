@@ -59,7 +59,7 @@ export default function DailyReport() {
         setLoading(true);
         setError(null);
         
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
         if (!apiKey) {
           setError(t('report.apikey_missing') || 'API Key missing. Please configure GEMINI_API_KEY.');
           setLoading(false);
