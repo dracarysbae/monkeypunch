@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_GEMINI_API_KEY: string
   readonly GEMINI_API_KEY: string
+  readonly API_KEY: string
   // more env variables...
 }
 
@@ -13,5 +14,6 @@ interface ImportMeta {
 declare namespace NodeJS {
   interface ProcessEnv {
     GEMINI_API_KEY: string;
+    API_KEY: string;
   }
 }
