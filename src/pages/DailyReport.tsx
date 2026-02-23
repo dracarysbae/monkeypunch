@@ -61,7 +61,9 @@ export default function DailyReport() {
         
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-          throw new Error('GEMINI_API_KEY is not configured');
+          setError(t('report.apikey_missing') || 'API Key missing. Please configure GEMINI_API_KEY.');
+          setLoading(false);
+          return;
         }
 
         const ai = new GoogleGenAI({ apiKey });
@@ -98,7 +100,7 @@ export default function DailyReport() {
         Please write in markdown format.`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             tools: [{ googleSearch: {} }],
