@@ -53,15 +53,28 @@ export default function DailyReport() {
     activityStatus = t('status.active');
   }
 
+  const [manualApiKey, setManualApiKey] = useState<string>('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+
   useEffect(() => {
     async function fetchDailyReport() {
       try {
         setLoading(true);
         setError(null);
         
-        const apiKey = process.env.GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || process.env.API_KEY || import.meta.env.API_KEY;
+        let apiKey = process.env.GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || process.env.API_KEY || import.meta.env.API_KEY;
+        
+        // Check localStorage for manually entered key
+        if (!apiKey) {
+          const storedKey = localStorage.getItem('GEMINI_API_KEY_MANUAL');
+          if (storedKey) {
+            apiKey = storedKey;
+          }
+        }
+
         if (!apiKey) {
           setError(t('report.apikey_missing') || 'API Key missing. Please configure GEMINI_API_KEY.');
+          setShowApiKeyInput(true);
           setLoading(false);
           return;
         }
@@ -213,6 +226,47 @@ export default function DailyReport() {
                 <Loader2 className="w-16 h-16 animate-spin text-emerald-500 relative z-10" />
               </div>
               <p className="animate-pulse font-medium text-lg font-serif text-stone-500">{t('report.loading')}</p>
+            </div>
+          ) : showApiKeyInput ? (
+            <div className="flex flex-col items-center justify-center h-full space-y-6 text-stone-600 py-12">
+              <div className="p-4 bg-amber-50 rounded-full">
+                <AlertCircle className="w-12 h-12 text-amber-500" />
+              </div>
+              <div className="text-center max-w-md space-y-4">
+                <p className="font-medium text-lg text-stone-700">
+                  {t('report.apikey_missing') || 'API Key missing.'}
+                </p>
+                <p className="text-sm text-stone-500">
+                  Please enter your Gemini API Key to continue. It will be saved in your browser's local storage.
+                </p>
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (manualApiKey.trim()) {
+                      localStorage.setItem('GEMINI_API_KEY_MANUAL', manualApiKey.trim());
+                      window.location.reload();
+                    }
+                  }}
+                  className="flex flex-col gap-3 w-full"
+                >
+                  <input
+                    type="password"
+                    value={manualApiKey}
+                    onChange={(e) => setManualApiKey(e.target.value)}
+                    placeholder="Enter Gemini API Key"
+                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full px-4 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
+                  >
+                    Save & Reload
+                  </button>
+                </form>
+                <p className="text-xs text-stone-400 mt-4">
+                  Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Google AI Studio</a>
+                </p>
+              </div>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full space-y-6 text-rose-500 py-12">
