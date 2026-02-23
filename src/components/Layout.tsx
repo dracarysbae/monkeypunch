@@ -3,10 +3,24 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Home, Info, Heart, MapPin, Video, Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import ScrollingMonkey from './ScrollingMonkey';
+import { useMemo, useState, useEffect } from 'react';
 
 export default function Layout() {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 768); // md breakpoint
+    };
+    
+    // Initial check
+    checkScreenSize();
+    
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const navItems = [
     { path: '/', label: t('nav.daily'), icon: Home },
@@ -15,15 +29,15 @@ export default function Layout() {
     { path: '/canli-yayin', label: t('nav.live'), icon: Video },
   ];
 
-  // Generate random leaves for background
-  const leaves = Array.from({ length: 25 }).map((_, i) => ({
+  // Generate random leaves for background - Memoized to prevent re-calculation on every render
+  const leaves = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
     animationDuration: `${15 + Math.random() * 20}s`,
     animationDelay: `${Math.random() * 10}s`,
     scale: 0.5 + Math.random() * 1,
     color: ['text-emerald-600/20', 'text-amber-600/20', 'text-lime-600/20', 'text-teal-600/20'][Math.floor(Math.random() * 4)]
-  }));
+  })), []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-stone-50 to-amber-50 text-stone-900 font-sans selection:bg-emerald-200 relative overflow-hidden">
@@ -46,7 +60,7 @@ export default function Layout() {
         ))}
       </div>
 
-      <ScrollingMonkey />
+      {isLargeScreen && <ScrollingMonkey />}
       
       {/* Floating Header */}
       <header className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8 mb-8">

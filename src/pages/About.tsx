@@ -45,6 +45,9 @@ export default function About() {
           alt="Punch the monkey placeholder"
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-1000"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-stone-900/20 to-transparent flex items-end p-8 md:p-12">
           <div className="text-white relative z-10">
