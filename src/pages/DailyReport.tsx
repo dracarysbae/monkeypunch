@@ -5,8 +5,6 @@ import { motion } from 'motion/react';
 import { Calendar, Loader2, Sparkles, AlertCircle, Clock, Moon, Sun } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export default function DailyReport() {
   const { t, language } = useLanguage();
   const [report, setReport] = useState<string | null>(null);
@@ -60,6 +58,13 @@ export default function DailyReport() {
       try {
         setLoading(true);
         setError(null);
+        
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          throw new Error('GEMINI_API_KEY is not configured');
+        }
+
+        const ai = new GoogleGenAI({ apiKey });
         
         const cacheKey = `punch_report_${language}`;
         const cacheDateKey = `punch_report_date_${language}`;

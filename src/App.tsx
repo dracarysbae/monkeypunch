@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { Loader2 } from 'lucide-react';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const DailyReport = lazy(() => import('./pages/DailyReport'));
 const About = lazy(() => import('./pages/About'));
@@ -24,33 +25,35 @@ function LoadingScreen() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={
-              <Suspense fallback={<LoadingScreen />}>
-                <DailyReport />
-              </Suspense>
-            } />
-            <Route path="hakkinda" element={
-              <Suspense fallback={<LoadingScreen />}>
-                <About />
-              </Suspense>
-            } />
-            <Route path="harita" element={
-              <Suspense fallback={<LoadingScreen />}>
-                <MapPage />
-              </Suspense>
-            } />
-            <Route path="canli-yayin" element={
-              <Suspense fallback={<LoadingScreen />}>
-                <LiveStream />
-              </Suspense>
-            } />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <DailyReport />
+                </Suspense>
+              } />
+              <Route path="hakkinda" element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <About />
+                </Suspense>
+              } />
+              <Route path="harita" element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <MapPage />
+                </Suspense>
+              } />
+              <Route path="canli-yayin" element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <LiveStream />
+                </Suspense>
+              } />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
