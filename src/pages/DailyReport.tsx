@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
 import { motion } from 'motion/react';
 import { Calendar, Loader2, Sparkles, AlertCircle, Clock, Moon, Sun, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-
-import { CONFIG } from '../config';
 
 export default function DailyReport() {
   const { t, language } = useLanguage();
@@ -71,18 +68,6 @@ export default function DailyReport() {
         setLoading(true);
         setError(null);
         
-        // Try to get API key from various sources, prioritizing the hardcoded one as requested
-        const apiKey = "AIzaSyBeCW-NsofXd0tANQJGQNwmcnxzVP1s1UM" || process.env.GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || process.env.API_KEY || import.meta.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY || CONFIG.GEMINI_API_KEY;
-        
-        if (!apiKey) {
-          console.error("API Key is missing in DailyReport.tsx");
-          setError(t('report.apikey_missing') || 'API Key missing. Please configure GEMINI_API_KEY in your environment variables or src/config.ts.');
-          setLoading(false);
-          return;
-        }
-
-        const ai = new GoogleGenAI({ apiKey });
-        
         const cacheKey = `punch_report_${language}`;
         const cacheDateKey = `punch_report_date_${language}`;
         
@@ -114,28 +99,36 @@ export default function DailyReport() {
         If you can't find anything specific for today, talk about his general current status and development.
         Please write in markdown format.`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            tools: [{ googleSearch: {} }],
+        // Call backend API instead of directly using Gemini
+        const response = await fetch('/api/generate-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            prompt,
+            tools: [{ googleSearch: {} }],
+          }),
         });
 
-        const reportText = response.text || t('report.error');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate report');
+        }
+
+        const data = await response.json();
+        const reportText = data.text || t('report.error');
         setReport(reportText);
-        
-        const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-        setSources(chunks);
+        setSources(data.sources || []);
 
         // Save to cache
         localStorage.setItem(cacheKey, reportText);
         localStorage.setItem(cacheDateKey, jstDateString);
-        localStorage.setItem(`${cacheKey}_sources`, JSON.stringify(chunks));
+        localStorage.setItem(`${cacheKey}_sources`, JSON.stringify(data.sources || []));
 
       } catch (err: any) {
         console.error('Error fetching report:', err);
-        setError(t('report.fetch_error'));
+        setError(err.message || t('report.fetch_error'));
       } finally {
         setLoading(false);
       }
