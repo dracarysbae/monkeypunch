@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
 import { motion } from 'motion/react';
-import { Calendar, Loader2, Sparkles, AlertCircle, Clock, Moon, Sun } from 'lucide-react';
+import { Calendar, Loader2, Sparkles, AlertCircle, Clock, Moon, Sun, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 import { CONFIG } from '../config';
@@ -14,6 +14,7 @@ export default function DailyReport() {
   const [error, setError] = useState<string | null>(null);
   const [sources, setSources] = useState<any[]>([]);
   const [japanTime, setJapanTime] = useState<Date>(new Date());
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Update Japan time every minute
   useEffect(() => {
@@ -22,6 +23,15 @@ export default function DailyReport() {
     }, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleRefresh = useCallback(() => {
+    const cacheKey = `punch_report_${language}`;
+    const cacheDateKey = `punch_report_date_${language}`;
+    localStorage.removeItem(cacheKey);
+    localStorage.removeItem(cacheDateKey);
+    localStorage.removeItem(`${cacheKey}_sources`);
+    setRefreshKey(prev => prev + 1);
+  }, [language]);
 
   // Calculate Japan Time
   const jstString = japanTime.toLocaleString("en-US", {timeZone: "Asia/Tokyo"});
@@ -61,8 +71,8 @@ export default function DailyReport() {
         setLoading(true);
         setError(null);
         
-        // Try to get API key from various sources
-        const apiKey = process.env.GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || process.env.API_KEY || import.meta.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY || CONFIG.GEMINI_API_KEY;
+        // Try to get API key from various sources, prioritizing the hardcoded one as requested
+        const apiKey = "AIzaSyBeCW-NsofXd0tANQJGQNwmcnxzVP1s1UM" || process.env.GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || process.env.API_KEY || import.meta.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY || CONFIG.GEMINI_API_KEY;
         
         if (!apiKey) {
           console.error("API Key is missing in DailyReport.tsx");
@@ -132,7 +142,7 @@ export default function DailyReport() {
     }
 
     fetchDailyReport();
-  }, [language, jstDateString]); // Re-fetch if language changes or day changes
+  }, [language, jstDateString, refreshKey]); // Re-fetch if language changes, day changes, or refresh is triggered
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -205,8 +215,18 @@ export default function DailyReport() {
             <Sparkles className="w-5 h-5 text-amber-500" />
             {t('report.ai_powered')}
           </div>
-          <div className="text-xs font-bold text-stone-500 bg-stone-200/50 px-4 py-1.5 rounded-full uppercase tracking-wide">
-            {jstDate.toLocaleDateString(currentLang.locale)}
+          <div className="flex items-center gap-3">
+            <div className="text-xs font-bold text-stone-500 bg-stone-200/50 px-4 py-1.5 rounded-full uppercase tracking-wide">
+              {jstDate.toLocaleDateString(currentLang.locale)}
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="p-2 text-stone-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh Report"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
 
