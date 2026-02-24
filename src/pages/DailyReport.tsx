@@ -119,14 +119,18 @@ export default function DailyReport() {
         // what happened rather than failing silently with a parse error.
         const contentType = response.headers.get('content-type') || '';
         if (!response.ok) {
+          // Read the body only once.  Attempt to parse JSON, otherwise fall
+          // back to raw text.  Using `text()` first avoids the "already read"
+          // error when json() fails.
           let errMsg = `HTTP ${response.status}`;
+          const body = await response.text();
           try {
-            const errorData = await response.json();
+            const errorData = JSON.parse(body);
             errMsg = errorData.error || JSON.stringify(errorData);
-          } catch {
-            const text = await response.text();
-            console.error('Non-JSON error response:', text);
-            errMsg = text;
+          } catch (parseErr) {
+            // not JSON, use raw text
+            console.error('Non-JSON error response body:', body);
+            errMsg = body || errMsg;
           }
           throw new Error(errMsg);
         }
