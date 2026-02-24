@@ -25,6 +25,11 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
+// Health check endpoint for uptime monitoring
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({ status: 'okay', timestamp: new Date().toISOString() });
+});
+
 // API endpoint for generating report
 app.post('/api/generate-report', async (req: Request, res: Response) => {
   try {
@@ -69,8 +74,18 @@ app.post('/api/generate-report', async (req: Request, res: Response) => {
 });
 
 // Serve static files from dist
+// __dirname does not exist in ES module scope, so compute it manually.
+const __filename = new URL('', import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
 const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath));
+
+// catch any unmatched `/api` requests and return JSON so the client
+// doesn't try to parse an HTML error page.
+app.use('/api', (req: Request, res: Response) => {
+  console.warn(`API route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ error: 'Not found' });
+});
 
 // Fallback to index.html for React Router
 app.get('*', (req: Request, res: Response) => {

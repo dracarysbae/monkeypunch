@@ -17,19 +17,32 @@ View your app in AI Studio: https://ai.studio/apps/ea61215f-650e-41b5-b3b9-b0bb0
    npm install
    ```
 
-2. Set the `GEMINI_API_KEY` in [.env](.env) to your Gemini API key
+2. Create a `.env` file with at least the following variables:
+   ```env
+   GEMINI_API_KEY=your_gemini_key_here
+   # Optional in development; backend default port is 3001.
+   PORT=3001
+   # If your frontend is served separately from the API, set its origin:
+   VITE_API_URL=https://api.punchthemacaque.org
+   ```
 
-3. Run the app:
+3. Run the app locally:
    ```
    npm run dev
    ```
-   This starts the Vite development server on port 3000.
+   This starts the Vite development server on port 3000 by default.
 
-4. (Optional) To run with the backend server:
+4. (Optional) To run the React client together with the backend server:
    ```
    npm run dev:full
    ```
    This runs both Vite (port 3000) and the backend server (port 3001).
+
+   If you prefer to launch them separately:
+   ```bash
+   npm run dev          # frontend
+   npm run server       # backend
+   ```
 
 ## Production Deployment
 
@@ -40,16 +53,27 @@ View your app in AI Studio: https://ai.studio/apps/ea61215f-650e-41b5-b3b9-b0bb0
    npm run build
    ```
 
-2. Set environment variable on your hosting platform:
-   - Add `GEMINI_API_KEY` with your Gemini API key
-   - Add `PORT` (optional, defaults to 3001)
+2. Make sure your hosting environment serves both the static files and the
+   backend code, or deploy them separately. The backend must be available at
+   the origin referenced by `VITE_API_URL` (ignored if the client and server
+   are on the same host). On platforms like Vercel/Netlify you can use a
+   serverless function or a separate node service.
 
-3. Run the server:
+3. Set the following environment variables in production:
+   - `GEMINI_API_KEY` – **required**
+   - `PORT` – (optional, default 3001)
+   - `VITE_API_URL` – the base URL of the backend if it differs from the
+     frontend origin, e.g. `https://api.punchthemacaque.org`
+
+4. Start the server:
    ```
    npm run start
    ```
 
-**Hosting options:** Vercel, Render, Railway, Heroku, AWS, etc.
+**Hosting options:** Vercel, Render, Railway, Heroku, AWS, etc. If you are
+statically hosting the front-end only, remember the `/api` path will not exist
+and requests will fail with a 404 page; you will need a proxy or separate API
+service to handle them.
 
 ### Option 2: Static Hosting (Netlify, GitHub Pages, etc.)
 
