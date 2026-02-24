@@ -100,11 +100,13 @@ export default function DailyReport() {
         Please write in markdown format.`;
 
         // Call backend API instead of directly using Gemini.
-        // Depending on environment the server may be on another port, so
-        // include a full origin when in development (helps without proxy),
-        // but we also configure a proxy in vite.config.ts for convenience.
-        const base = import.meta.env.DEV ? 'http://localhost:3001' : '';
-        const response = await fetch(`${base}/api/generate-report`, {
+        // Base URL can be overridden via VITE_API_URL, which should point
+        // to the server's origin (e.g. https://api.punchthemacaque.org).
+        // If that variable is empty we fall back to the same host; in
+        // development we still default to localhost:3001 for ease of use.
+        const apiUrl = import.meta.env.VITE_API_URL ||
+                       (import.meta.env.DEV ? 'http://localhost:3001' : '');
+        const response = await fetch(`${apiUrl}/api/generate-report`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -155,7 +157,18 @@ export default function DailyReport() {
 
       } catch (err: any) {
         console.error('Error fetching report:', err);
-        setError(err.message || t('report.fetch_error'));
+        // Provide a friendlier message when the backend isn't reachable or
+        // returns an HTML error page (common on static hosts without a
+        // server).  The raw error may mention "page could not be found" or
+        // similar; convert that into instructions.
+        let msg = err.message || t('report.fetch_error');
+        if (msg.toLowerCase().includes('page could not be found') ||
+            msg.toLowerCase().includes('not_found') ||
+            msg.toLowerCase().includes('404')) {
+          msg = t('report.server_missing') ||
+                'Backend API not available. Make sure the server is deployed and VITE_API_URL is correct.';
+        }
+        setError(msg);
       } finally {
         setLoading(false);
       }
