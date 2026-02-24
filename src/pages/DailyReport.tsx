@@ -99,8 +99,12 @@ export default function DailyReport() {
         If you can't find anything specific for today, talk about his general current status and development.
         Please write in markdown format.`;
 
-        // Call backend API instead of directly using Gemini
-        const response = await fetch('/api/generate-report', {
+        // Call backend API instead of directly using Gemini.
+        // Depending on environment the server may be on another port, so
+        // include a full origin when in development (helps without proxy),
+        // but we also configure a proxy in vite.config.ts for convenience.
+        const base = import.meta.env.DEV ? 'http://localhost:3001' : '';
+        const response = await fetch(`${base}/api/generate-report`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -111,12 +115,31 @@ export default function DailyReport() {
           }),
         });
 
+        // if the response isn't JSON we want to log the body so we can see
+        // what happened rather than failing silently with a parse error.
+        const contentType = response.headers.get('content-type') || '';
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to generate report');
+          let errMsg = `HTTP ${response.status}`;
+          try {
+            const errorData = await response.json();
+            errMsg = errorData.error || JSON.stringify(errorData);
+          } catch {
+            const text = await response.text();
+            console.error('Non-JSON error response:', text);
+            errMsg = text;
+          }
+          throw new Error(errMsg);
         }
 
-        const data = await response.json();
+        let data: any;
+        if (contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          console.error('Expected JSON but got:', text);
+          throw new Error('Server returned non-JSON response');
+        }
+
         const reportText = data.text || t('report.error');
         setReport(reportText);
         setSources(data.sources || []);
